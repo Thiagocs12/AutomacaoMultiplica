@@ -1,68 +1,28 @@
-Cypress.Commands.add('login', () => {
-  const user = Cypress.env('APP_USER'); // usar apenas Cypress.env no runtime do browser
-  const pass = Cypress.env('APP_PASS');
+const kcOrigin = Cypress.env('BASE_URL_KEYCLOAK');
 
+
+// Command para login via Keycloak (cross-origin)
+Cypress.Commands.add('loginKeycloak', (usuario, senha) => {
+  // Garante que estamos no app antes de trocar de domínio
   cy.visit('/');
-  cy.get('#username').should('be.visible').clear().type(user, { delay: 0 });
-  cy.get('#password').should('be.visible').clear().type(pass, { delay: 0, log: false });
-  cy.get('form').submit();
+  cy.origin(kcOrigin, { args: { usuario, senha } }, ({ usuario, senha }) => {
+      cy.get('#username').should('be.visible').clear().type(usuario);
+      cy.get('#password').should('be.visible').clear().type(senha, { log: false });
+      cy.get('form').submit();
+    }
+  );
+  // Verifica se voltou pro app
+  cy.location('origin', { timeout: 60000 }).should('eq', Cypress.config('baseUrl'));
 });
 
-// ---------------------------------------------
-// Comando: cy.cleanupPessoa(cnpjCpf)
-// ---------------------------------------------
-Cypress.Commands.add('cleanupPessoa', (cnpjCpf) => {
-  return cy.task('db:exec', {
-    query: `
-        DELETE FROM MC_CAD_PESSOA_ENDERECO WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CED_FILIAL WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_PRT_FILIAL WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CAD_PESSOA_ENDERECO WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CED_FILIAL WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_PRT_FILIAL WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_PRT_FILIAL WHERE idProspect IN (SELECT id FROM MC_PRT_PROSPECT WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_PRT_FORNECEDORES WHERE idProspect IN (SELECT id FROM MC_PRT_PROSPECT WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_POC_PROSPECT WHERE idProspect IN (SELECT id FROM MC_PRT_PROSPECT WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_PRT_PROSPECT WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_MOP_OPERACAO_CONTA_BANCARIA WHERE idPessoaContaBancaria IN (SELECT id FROM MC_CAD_PESSOA_CONTA_BANCARIA WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CAD_PESSOA_CONTA_BANCARIA WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CAD_PESSOA_CONTATO WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CAD_PESSOA_ENTIDADE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CAD_PESSOA_TELEFONE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);      
-        DELETE FROM MC_CED_GERENTE_LOG WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));      
-        DELETE FROM MC_MOP_TITULOS_POSICAO WHERE idTitulo IN (SELECT id FROM MC_MOP_TITULOS WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_TITULOS_COBRANCA WHERE idTitulo IN (SELECT id FROM MC_MOP_TITULOS WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_TITULOS_LEGADO WHERE idTitulo IN (SELECT id FROM MC_MOP_TITULOS WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_TITULOS_MOVIMENTO WHERE idTitulo IN (SELECT id FROM MC_MOP_TITULOS WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_TITULOS_PAGAMENTO WHERE idTitulo IN (SELECT id FROM MC_MOP_TITULOS WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_TITULOS WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));      
-        DELETE FROM MC_CED_FUNDO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CED_LOCAL_COBRANCA_NN WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CED_GARANTIA_REGRA WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CED_CEDENTE_CONVENIO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_ENT_DOCUMENTO_KIT WHERE idCedenteGarantia IN (SELECT id FROM MC_CED_GARANTIA WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_CED_GARANTIA_ITEM WHERE idCedenteGarantia IN (SELECT id FROM MC_CED_GARANTIA WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_CED_GARANTIA WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));      
-        DELETE FROM MC_MOP_OPERACAO_TITULO_ERRO WHERE idPreOperacaoTitulo IN (SELECT id FROM MC_MOP_PRE_OPERACAO_TITULO WHERE idPreOperacao IN (SELECT id FROM MC_MOP_PRE_OPERACAO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf))));
-        DELETE FROM MC_MOP_PRE_OPERACAO_TITULO WHERE idPreOperacao IN (SELECT id FROM MC_MOP_PRE_OPERACAO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));      
-        DELETE FROM MC_MOP_NOTA_XML_DUPLICATA WHERE idNotaXml IN (SELECT id FROM MC_MOP_NOTA_XML WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_NOTA_XML WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));      
-        UPDATE MC_MOP_PRE_OPERACAO SET idOperacao = NULL WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        UPDATE MC_MOP_OPERACAO SET idPreOperacao = NULL WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));      
-        DELETE FROM MC_CAD_ALCADA_PENDENTE_WHATS WHERE idPreOperacao IN (SELECT id FROM MC_MOP_PRE_OPERACAO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_PRE_OPERACAO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_MOP_OPERACAO_TITULO WHERE idOperacao IN (SELECT id FROM MC_MOP_OPERACAO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_MOP_OPERACAO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));      
-        DELETE FROM MC_CED_BOLETO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CED_PARAMETRO_OPERACAO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CED_PRODUTO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CED_PRODUTO_GARANTIA_REGRA WHERE idCedenteProduto IN (SELECT id FROM MC_CED_PRODUTO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf)));
-        DELETE FROM MC_CED_PRODUTO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));
-        DELETE FROM MC_CED_PORTAL_CONVENIO WHERE idCedente IN (SELECT id FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf));      
-        DELETE FROM MC_PRT_DADOS_OPERACIONAIS WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
-        DELETE FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf;
-      `,
-    params: { cnpjCpf }
-  });
+Cypress.Commands.add('loginKeycloakError', (usuario, senha) => {
+  // Garante que estamos no app antes de trocar de domínio
+  cy.visit('/');
+  cy.origin(kcOrigin, { args: { usuario, senha } }, ({ usuario, senha }) => {
+      cy.get('#username').should('be.visible').clear().type(usuario);
+      cy.get('#password').should('be.visible').clear().type(senha, { log: false });
+      cy.get('form').submit();
+      cy.contains('Usuário ou senha inválidos').should('be.visible')
+    }
+  );
 });

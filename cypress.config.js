@@ -5,8 +5,12 @@ require('dotenv').config(); // carrega o .env
 // Exporta o objeto de configuração
 module.exports = defineConfig({
   e2e: {
-    baseUrl: process.env.BASE_URL || 'http://localhost:3000',
-
+    baseUrl: process.env.BASE_URL,
+    env: {
+      APP_PASS: process.env.APP_PASS,
+      APP_USER: process.env.APP_USER,
+      BASE_URL_KEYCLOAK: process.env.BASE_URL_KEYCLOAK,
+    },
     setupNodeEvents(on, config) {
       // Inicializa conexão MSSQL só quando precisar
       const sql = require('mssql');
@@ -40,6 +44,7 @@ module.exports = defineConfig({
     defaultCommandTimeout: 10000,
     pageLoadTimeout: 60000,
     testIsolation: true,
+    chromeWebSecurity: false,
   },
 
   video: false,
