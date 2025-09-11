@@ -1,0 +1,31 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cypress cache
+.cache/
+cypress/videos/
+cypress/screenshots/
+
+# Arquivos de ambiente (não versionar senhas!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# Coverage (se usar code coverage)
+coverage/
