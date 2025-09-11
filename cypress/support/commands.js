@@ -1,3 +1,4 @@
+const cypress = require("cypress");
 const kcOrigin = Cypress.env('BASE_URL_KEYCLOAK');
 
 
@@ -25,4 +26,23 @@ Cypress.Commands.add('loginKeycloakError', (usuario, senha) => {
       cy.contains('Usuário ou senha inválidos').should('be.visible')
     }
   );
+
+cypress.Commands.add('criaPoc', (cnpjCpf) => {
+    cy.get('[data-testid="SearchIcon"]').should('be.visible')
+    cy.contains('Beyond BackOffice').should('be.visible').click()
+    cy.contains('Comercial').should('be.visible').click()
+    cy.contains('Home').should('be.visible').trigger('mouseover')
+    cy.contains('Prospect').should('be.visible').click()
+    cy.contains('Novo Prospect').should('be.visible').click()
+    cy.get('.MuiTextField-root > .MuiOutlinedInput-root > .MuiOutlinedInput-input').type(cnpjCpf)
+    cy.realPress('Tab')
+    cy.wait(500)
+    cy.get('#mui-component-select-tipoProspect').click()
+    cy.get('[role="option"]').contains('PROSPECT') .click();
+    cy.get('.prospeccao-MuiInputBase-root').type('Gerente Automa')
+    cy.get('[role="option"]').contains('GERENTE AUTOMAÇÃO').click();
+    cy.realPress('Tab')
+    cy.contains('Salvar').should('be.visible').click()
+    cy.contains('Dados do Prospect').should('be.visible')
+  })
 });

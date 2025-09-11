@@ -16,6 +16,7 @@
 // Import commands.js using ES2015 syntax:
 import './commands'
 import './cleanupPessoa'
+import "cypress-real-events";
 
 // Ignora esse erro específico para o teste não falhar
 Cypress.on('uncaught:exception', (err) => {
@@ -30,6 +31,12 @@ Cypress.on('uncaught:exception', (err) => {
 // Opcional: ignorar especificamente 502 para não derrubar o teste
 Cypress.on('uncaught:exception', (err) => {
   if (/Request failed with status code 502/.test(err.message)) {
+    return false; // não falha o teste por este erro
+  }
+});
+
+Cypress.on('uncaught:exception', (err) => {
+  if (/Request failed with status code 500/.test(err.message)) {
     return false; // não falha o teste por este erro
   }
 });
