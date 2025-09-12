@@ -2,7 +2,7 @@
 // Comando: cy.cleanupPessoa(cnpjCpf)
 // ---------------------------------------------
 Cypress.Commands.add('cleanupPessoa', (cnpjCpf) => {
-  return cy.task('queryDb', {
+  return cy.task('db:exec', {
     sql: `
       DELETE FROM MC_CAD_PESSOA_ENDERECO WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
       DELETE FROM MC_CED_FILIAL WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
@@ -53,6 +53,15 @@ Cypress.Commands.add('cleanupPessoa', (cnpjCpf) => {
       DELETE FROM MC_CED_CEDENTE WHERE idPessoa IN (SELECT id FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf);
       DELETE FROM MC_CAD_PESSOA WHERE cnpjCpf=@cnpjCpf;
     `,
-    params: [{ name: 'cnpjCpf', type: 'VarChar', value: cnpjCpf }]
-  });
-});
+    params: { cnpjCpf }
+  })
+})
+
+Cypress.Commands.add('atualizarNomeFantasia', (cnpjCpf) => {
+    return cy.task('db:exec', {
+    sql: `
+      UPDATE MC_CAD_PESSOA SET nome = coalesce(razaoSocial, nome) where cnpjCpf = @cnpjCpf;
+    `,
+    params: { cnpjCpf }
+  })
+})

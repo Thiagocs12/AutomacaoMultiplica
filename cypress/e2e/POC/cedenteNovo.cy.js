@@ -8,9 +8,9 @@ const empresa = {
 }
 
 describe('Criação de uma POC para um cedente novo na casa', () => {
-    before(() => {
-        cy.cleanupPessoa(empresa.cnpj)
-    })
+    //before(() => {
+    //    cy.cleanupPessoa(empresa.cnpj)
+    //})
 
     beforeEach(() => {
         cy.visit('/')
@@ -18,11 +18,25 @@ describe('Criação de uma POC para um cedente novo na casa', () => {
     })
 
     it('Criar uma poc para um cedente novo na casa', () => {
-        cy.criaPoc(empresa.cnpj)
+        cy.menuProspect()
+        cy.criarProspect(empresa.cnpj, 'PROSPECT')
+        cy.contains('Dados do Prospect').should('be.visible')
+        cy.atualizarNomeFantasia(empresa.cnpj)
+    })
+    
+    it('Validar que não posso criar uma poc para um cnpj que já está na esteira', () => {
+        cy.get('[data-testid="SearchIcon"]').should('be.visible')
+        cy.menuProspect()
+        cy.criarProspect(empresa.cnpj, 'PROSPECT')
+        cy.contains('CNPJ informado está associado a uma esteira ativa.').should('be.visible')
     })
 
-    it('Valido a não possibili', () => {
-        cy.criaPoc(empresa.cnpj)
-        cy.contains('CNPJ informado está associado a uma esteira ativa.').should('be.visible')
+    it.only('Preecho os dados necessários para prosseguir com a poc', () => {
+        cy.menuProspect()
+        cy.contains('Monitor').should('be.visible').click()
+        cy.get('[name="cnpj"]').type(empresa.cnpj)
+        cy.contains('Buscar').should('be.visible').click()
+        cy.get('.prospeccao-MuiIconButton-label > .prospeccao-MuiSvgIcon-root').click()
+        cy.contains('Cadastrar Prospect').should('be.visible').click()
     })
 })

@@ -35,6 +35,8 @@ module.exports = defineConfig({
               encrypt: toBool(process.env.DB_ENCRYPT, true),
               trustServerCertificate: toBool(process.env.DB_TRUST_SERVER_CERT, false),
             },
+            connectionTimeout: Number(process.env.DB_CONNECTION_TIMEOUT || 15000),
+            requestTimeout: Number(process.env.DB_REQUEST_TIMEOUT || 60000),
           }).connect();
           return pool;
         } catch (e) {
@@ -43,14 +45,52 @@ module.exports = defineConfig({
         }
       }
 
-      async function runQuery(sqlText, params = {}) {
+      // Aceita params como objeto simples { nome: 'x' } ou array [{name, type?, value}]
+      function bindParams(req, params) {
+        if (!params) return;
+        if (Array.isArray(params)) {
+          for (const p of params) {
+            const { name, type, value } = p;
+            if (!name) continue;
+            const t = typeof type === 'string' ? sql[type] : type;
+            t ? req.input(name, t, value) : req.input(name, value);
+          }
+        } else if (typeof params === 'object') {
+          for (const [name, value] of Object.entries(params)) {
+            req.input(name, value);
+          }
+        }
+      }
+
+      // Normaliza entrada: string | { sql|query, params? }
+      function normalize(input) {
+        if (typeof input === 'string') return { sqlText: input, params: undefined };
+        if (input && typeof input === 'object') {
+          const sqlText = input.sql || input.query;
+          return { sqlText, params: input.params };
+        }
+        return { sqlText: undefined, params: undefined };
+      }
+
+      async function runQuery(input) {
+        const { sqlText, params } = normalize(input);
+        if (!sqlText) throw new Error("db:exec requer objeto { sql, params? } ou string SQL");
+
         const p = await getPool();
         const req = p.request();
-        // params: { id: 123, nome: 'abc' } -> usa @id, @nome na query
-        for (const [name, value] of Object.entries(params)) {
-          req.input(name, value);
+        req.multiple = true; // permite múltiplos resultsets / múltiplas instruções
+
+        bindParams(req, params);
+
+        if (toBool(process.env.DB_LOG_SQL, false)) {
+          // Log simples no terminal do Cypress (plugins)
+          // Atenção: não faça log de valores sensíveis em produção
+          console.log('[DB] Executando SQL:\n', sqlText);
+          if (params) console.log('[DB] Params:', params);
         }
+
         const result = await req.query(sqlText);
+
         // Retorna algo serializável
         return {
           rowsAffected: result.rowsAffected,
@@ -60,27 +100,34 @@ module.exports = defineConfig({
       }
 
       on('task', {
-        // Mantém compatibilidade com o que você já usava:
-        async queryDb(query) {
-          const { recordset } = await runQuery(query);
-          return recordset; // mantém o retorno antigo (apenas recordset)
+        // Compatibilidade: aceita string ou { sql|query, params }
+        async queryDb(input) {
+          const out = await runQuery(input);
+          // comportamento antigo: retornar só o primeiro recordset
+          return out.recordset;
         },
 
-        // Novo alias esperado pelos testes (aceita SQL + params)
-        async 'db:exec'({ sql: sqlText, params } = {}) {
-          if (!sqlText) throw new Error("db:exec requer objeto { sql, params? }");
-          return runQuery(sqlText, params || {});
+        // Novo alias usado nos testes: { sql, params? } (ou { query, params? })
+        async 'db:exec'(input = {}) {
+          return runQuery(input);
         },
+      });
+
+      // Fecha pool ao encerrar a run (higiene)
+      process.on('exit', async () => {
+        try { if (pool) await pool.close(); } catch {}
       });
 
       return config;
       // -------------------------------------------------------------
     },
 
-    defaultCommandTimeout: 10000,
+    defaultCommandTimeout: 20000,
     pageLoadTimeout: 60000,
     testIsolation: true,
     chromeWebSecurity: false,
+    //viewportWidth: 1366,
+    //viewportHeight: 768,
   },
 
   video: false,

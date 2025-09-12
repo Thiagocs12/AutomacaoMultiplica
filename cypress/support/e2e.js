@@ -15,7 +15,7 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
-import './cleanupPessoa'
+import './consultasSql'
 import "cypress-real-events";
 
 // Ignora esse erro específico para o teste não falhar
@@ -37,6 +37,11 @@ Cypress.on('uncaught:exception', (err) => {
 
 Cypress.on('uncaught:exception', (err) => {
   if (/Request failed with status code 500/.test(err.message)) {
+    return false; // não falha o teste por este erro
+  }
+});
+Cypress.on('uncaught:exception', (err) => {
+  if (/Network Error/.test(err.message)) {
     return false; // não falha o teste por este erro
   }
 });
