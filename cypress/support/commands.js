@@ -38,7 +38,6 @@ Cypress.Commands.add('menuProspect', () => {
 
 // 5. Criar prospect
 Cypress.Commands.add('criarProspect', (cnpj, tipoProspect) => {
-  cy.acdessarProspect()
   cy.contains('Novo Prospect').should('be.visible').click()
   cy.get('.MuiTextField-root > .MuiOutlinedInput-root > .MuiOutlinedInput-input').type(cnpj)
   cy.realPress('Tab')
@@ -50,3 +49,20 @@ Cypress.Commands.add('criarProspect', (cnpj, tipoProspect) => {
   cy.realPress('Tab')
   cy.contains('Salvar').should('be.visible').click()
 });
+
+Cypress.Commands.add('adicionarProdutosPleito', (produto, limite, prazo, taxa, concetracao) => {
+  cy.get('.prospeccao-MuiGrid-root > :nth-child(2)').click()
+  cy.contains(produto).should('be.visible').click()
+  cy.wait(500)
+  cy.contains('span', produto).should('be.visible').click()
+  cy.wait(1000)
+  cy.get('.css-1c6kgto > .MuiOutlinedInput-root > .MuiOutlinedInput-input').clear().type(limite)
+  cy.wait(500)
+  cy.get(':nth-child(3) > .MuiOutlinedInput-root > .MuiOutlinedInput-input').clear().type(prazo)
+  cy.wait(500)
+  cy.get('.css-1yp82fk > .MuiOutlinedInput-root > .MuiOutlinedInput-input').clear().type(taxa)
+  cy.wait(500)
+  cy.get('.css-2cy7sg > .MuiFormControl-root > .MuiOutlinedInput-root > .MuiOutlinedInput-input').clear().type(concetracao)
+  cy.wait(500)
+  cy.get('.css-1bvc4cc > .MuiButton-root').click()
+})
