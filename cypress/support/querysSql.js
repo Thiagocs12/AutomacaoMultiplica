@@ -60,7 +60,7 @@ Cypress.Commands.add('cleanupPessoa', (cnpjCpf) => {
 Cypress.Commands.add('atualizarNomeFantasia', (cnpjCpf) => {
     return cy.task('db:exec', {
     sql: `
-      UPDATE MC_CAD_PESSOA SET nome = coalesce(razaoSocial, nome) where cnpjCpf = @cnpjCpf;
+      UPDATE MC_CAD_PESSOA SET nomeFantasia = coalesce(razaoSocial, nome) where cnpjCpf = @cnpjCpf;
     `,
     params: { cnpjCpf }
   })

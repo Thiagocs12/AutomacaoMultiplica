@@ -15,7 +15,7 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
-import './consultasSql'
+import './querysSql'
 import "cypress-real-events";
 
 // Ignora esse erro específico para o teste não falhar
